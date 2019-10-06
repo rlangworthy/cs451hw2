@@ -185,7 +185,7 @@ void gauss() {
 			* element row and col */
   float multiplier;
 
-  printf("Computing Serially.\n");
+  printf("Computing With OpenMP.\n");
 
   /* Gaussian elimination */
   for (norm = 0; norm < N - 1; norm++) {

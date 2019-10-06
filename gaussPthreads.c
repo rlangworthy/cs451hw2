@@ -14,10 +14,13 @@
 #include <sys/times.h>
 #include <sys/time.h>
 #include <time.h>
+#include <pthread.h>
 
 /* Program Parameters */
 #define MAXN 2000  /* Max value of N */
 int N;  /* Matrix size */
+
+int N_THREADS; /*number of threads*/
 
 /* Matrices and vectors */
 volatile float A[MAXN][MAXN], B[MAXN], X[MAXN];
@@ -184,7 +187,7 @@ void gauss() {
 			* element row and col */
   float multiplier;
 
-  printf("Computing Serially.\n");
+  printf("Computing With Pthreads.\n");
 
   /* Gaussian elimination */
   for (norm = 0; norm < N - 1; norm++) {
