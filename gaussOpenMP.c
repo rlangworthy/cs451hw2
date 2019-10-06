@@ -14,6 +14,7 @@
 #include <sys/times.h>
 #include <sys/time.h>
 #include <time.h>
+#include <omp.h>
 
 /* Program Parameters */
 #define MAXN 2000  /* Max value of N */
@@ -192,7 +193,7 @@ void gauss() {
     for (row = norm + 1; row < N; row++) {
       multiplier = A[row][norm] / A[norm][norm];
       for (col = norm; col < N; col++) {
-	A[row][col] -= A[norm][col] * multiplier;
+	      A[row][col] -= A[norm][col] * multiplier;
       }
       B[row] -= B[norm] * multiplier;
     }
