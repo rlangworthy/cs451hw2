@@ -22,6 +22,7 @@ int N;  /* Matrix size */
 
 int N_THREADS; /*number of threads*/
 
+
 /* Matrices and vectors */
 volatile float A[MAXN][MAXN], B[MAXN], X[MAXN];
 /* A * X = B, solve for X */
@@ -118,6 +119,14 @@ void print_X() {
   }
 }
 
+void verify() {
+  float sol;
+  for(int i = 0; i < N; i++){
+    sol += A[0][i] * X[i];
+  }
+  printf("A[0]*X = %5.2f\nB[0] = %5.2f\n", sol, B[0]);
+}
+
 int main(int argc, char **argv) {
   /* Timing variables */
   struct timeval etstart, etstop;  /* Elapsed times using gettimeofday() */
@@ -134,6 +143,8 @@ int main(int argc, char **argv) {
 
   /* Print input matrices */
   print_inputs();
+  /*set number threads to available processors*/
+  N_THREADS = sysconf(_SC_NPROCESSORS_ONLN);
 
   /* Start Clock */
   printf("\nStarting clock.\n");
@@ -152,6 +163,7 @@ int main(int argc, char **argv) {
 
   /* Display output */
   print_X();
+  verify();
 
   /* Display timing results */
   printf("\nElapsed time = %g ms.\n",
@@ -182,23 +194,60 @@ int main(int argc, char **argv) {
 /* Provided global variables are MAXN, N, A[][], B[], and X[],
  * defined in the beginning of this code.  X[] is initialized to zeros.
  */
+
+/*
+  N_THREADS threads are initialized and the number of the thread is passed as a
+   parameter.  This is used to divy up the workload amongst the threads as each
+   row can be computed independently.  The threads are gathered before 
+  normalizing the next layer of the matrix.
+*/
+
+ void *inner_loop(void * param){
+    int norm = ((int *) param)[0];
+    int tNum = ((int *) param)[1];
+    //printf("thread = %d\n", norm);
+    for (int row = norm + 1; row < N; row++) {
+      if(row%N_THREADS == tNum){
+        float multiplier;
+        int col;
+        multiplier = A[row][norm] / A[norm][norm];
+          for (col = norm; col < N; col++) {
+              A[row][col] -= A[norm][col] * multiplier;
+          }
+          B[row] -= B[norm] * multiplier;
+      }
+    }
+     free(param);
+     pthread_exit(0);
+ }
+
 void gauss() {
   int norm, row, col;  /* Normalization row, and zeroing
 			* element row and col */
   float multiplier;
+  pthread_t thread[N_THREADS];
 
-  printf("Computing With Pthreads.\n");
+  printf("Computing with PThreads.\n");
 
   /* Gaussian elimination */
   for (norm = 0; norm < N - 1; norm++) {
-    for (row = norm + 1; row < N; row++) {
-      multiplier = A[row][norm] / A[norm][norm];
-      for (col = norm; col < N; col++) {
-	      A[row][col] -= A[norm][col] * multiplier;
+    for (int i = 0; i < N_THREADS; i++) {
+      int *param = (int*)malloc(sizeof(int)*2);
+      if ( param == NULL ) {
+          fprintf(stderr, "Couldn't allocate memory for thread.\n");
+          exit(EXIT_FAILURE);
       }
-      B[row] -= B[norm] * multiplier;
+      param[0] = norm;
+      param[1] = i;
+      pthread_create(&thread[i], NULL, inner_loop, param);
+    }
+    for (int i = 0; i < N_THREADS; i++) {
+      pthread_join(thread[i], NULL);
     }
   }
+
+  
+
   /* (Diagonal elements are not normalized to 1.  This is treated in back
    * substitution.)
    */

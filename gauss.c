@@ -115,6 +115,15 @@ void print_X() {
   }
 }
 
+void verify() {
+  float sol;
+  for(int i = 0; i < N; i++){
+    sol += A[0][i] * X[i];
+  }
+  printf("A[0]*X = %5.2f\nB[0] = %5.2f\n", sol, B[0]);
+}
+
+
 int main(int argc, char **argv) {
   /* Timing variables */
   struct timeval etstart, etstop;  /* Elapsed times using gettimeofday() */
@@ -149,6 +158,7 @@ int main(int argc, char **argv) {
 
   /* Display output */
   print_X();
+  verify();
 
   /* Display timing results */
   printf("\nElapsed time = %g ms.\n",
@@ -191,7 +201,7 @@ void gauss() {
     for (row = norm + 1; row < N; row++) {
       multiplier = A[row][norm] / A[norm][norm];
       for (col = norm; col < N; col++) {
-	A[row][col] -= A[norm][col] * multiplier;
+	      A[row][col] -= A[norm][col] * multiplier;
       }
       B[row] -= B[norm] * multiplier;
     }

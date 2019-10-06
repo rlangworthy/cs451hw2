@@ -116,6 +116,15 @@ void print_X() {
   }
 }
 
+void verify() {
+  float sol;
+  for(int i = 0; i < N; i++){
+    sol += A[0][i] * X[i];
+  }
+  printf("A[0]*X = %5.2f\nB[0] = %5.2f\n", sol, B[0]);
+}
+
+
 int main(int argc, char **argv) {
   /* Timing variables */
   struct timeval etstart, etstop;  /* Elapsed times using gettimeofday() */
@@ -150,6 +159,8 @@ int main(int argc, char **argv) {
 
   /* Display output */
   print_X();
+  /*verifies that the first row is what it is supposed to be*/
+  verify();
 
   /* Display timing results */
   printf("\nElapsed time = %g ms.\n",
@@ -180,16 +191,23 @@ int main(int argc, char **argv) {
 /* Provided global variables are MAXN, N, A[][], B[], and X[],
  * defined in the beginning of this code.  X[] is initialized to zeros.
  */
+
+/*
+  The second loop can be safely parallelized as each of the parallel threads
+  only reads from the norm row and all its rewriitng is confined to its own row
+  /rows.  As long as the rows are private and don't overlap, there should be no
+  dependencies for that loop.
+*/
+
 void gauss() {
   int norm, row, col;  /* Normalization row, and zeroing
 			* element row and col */
   float multiplier;
 
   printf("Computing With OpenMP.\n");
-
   /* Gaussian elimination */
   for (norm = 0; norm < N - 1; norm++) {
-    #pragma omp parallel for
+    #pragma omp parallel for shared(A, B) private(multiplier,row,col) 
     for (row = norm + 1; row < N; row++) {
       multiplier = A[row][norm] / A[norm][norm];
       for (col = norm; col < N; col++) {
